@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.web.bind.annotation.RequestParam;;
 
 @Controller
 public class SpotifyAuthController {
@@ -24,6 +25,13 @@ public class SpotifyAuthController {
                 + "&scope=" + scope;
 
         return new RedirectView(authUrl);
+
+    }
+
+    @GetMapping("/callback")
+    public String callback(@RequestParam("code")String code) {
+        System.out.println("Authorization code: " + code);
+        return "Authorization succesful.";
 
     }
 }
