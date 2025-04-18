@@ -13,6 +13,10 @@ public class Album {
     @JoinColumn(name = "artist_id")
     private Artist artist;
 
+    public void SetArtist(Artist artist) {
+        this.artist = artist;
+    }
+
     public Long getId() {
         return id;
     }

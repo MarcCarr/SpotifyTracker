@@ -19,6 +19,14 @@ public class Song {
     @JoinColumn(name = "artist_id")
     private Artist artist;
 
+    public void setArtist(Artist artist) {
+        this.artist = artist;
+    }
+
+    public void setAlbum(Album album) {
+        this.album = album;
+    }
+
     public void incrementPlayCount() {
         this.playCount++;
     }
