@@ -8,8 +8,7 @@ public class Song {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
-    private String genre;
-    private int playCount = 1;
+    private int playCount;
 
     @ManyToOne
     @JoinColumn(name = "album_id")
@@ -19,8 +18,16 @@ public class Song {
     @JoinColumn(name = "artist_id")
     private Artist artist;
 
+    public Artist getArtist() {
+        return artist;
+    }
+    
     public void setArtist(Artist artist) {
         this.artist = artist;
+    }
+
+    public Album getAlbum() {
+        return album;
     }
 
     public void setAlbum(Album album) {
@@ -45,14 +52,6 @@ public class Song {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getGenre() {
-        return genre;
-    }
-
-    public void setGenre(String genre) {
-        this.genre = genre;
     }
 
     public int getPlayCount() {
