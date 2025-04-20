@@ -17,6 +17,7 @@ import fi.haagahelia.spotifymc.spotifytracker.dto.SpotifyResponse;
 import fi.haagahelia.spotifymc.spotifytracker.repository.AlbumRepository;
 import fi.haagahelia.spotifymc.spotifytracker.repository.ArtistRepository;
 import fi.haagahelia.spotifymc.spotifytracker.repository.SongRepository;
+import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyAuthService;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.*;
@@ -42,9 +43,18 @@ public class SpotifyAuthController {
 
     @Autowired
     private ArtistRepository artistRepository;
-    
+
     @Autowired
     private AlbumRepository albumRepository;
+
+    @Autowired
+    private SpotifyAuthService spotifyAuthService;
+
+    @GetMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken() {
+        String response = spotifyAuthService.refreshAcessToken();
+        return ResponseEntity.ok("Token refreshed. Check console for new access token.");
+    }
 
     @GetMapping("/login")
     public RedirectView login() {
@@ -87,7 +97,7 @@ public class SpotifyAuthController {
     public ResponseEntity<String> getRecentlyPlayed() {
         RestTemplate restTemplate = new RestTemplate();
 
-        String accessToken = "Access token"; //Removed hard coded token before push. Dynamic token later.
+        String accessToken = spotifyAuthService.getAccessToken();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -111,37 +121,37 @@ public class SpotifyAuthController {
                 String playedAt = item.getPlayed_at();
 
                 System.out.println(
-                        "Title " + title + " - " + artistName + " | Album: " + albumTitle + " | Played at: " + playedAt);
+                        "Title " + title + " - " + artistName + " | Album: " + albumTitle + " | Played at: "
+                                + playedAt);
 
-               Artist artist = artistRepository.findByName(artistName);
-               if (artist == null) {
-                artist = new Artist();
-                artist.setName(artistName);
-                artistRepository.save(artist);
-               }
+                Artist artist = artistRepository.findByName(artistName);
+                if (artist == null) {
+                    artist = new Artist();
+                    artist.setName(artistName);
+                    artistRepository.save(artist);
+                }
 
-               Album album = albumRepository.findByTitleAndArtist(albumTitle, artist);
-               if (album == null) {
-                album = new Album();
-                album.setTitle(albumTitle);
-                album.SetArtist(artist);
-                albumRepository.save(album);
-               }
+                Album album = albumRepository.findByTitleAndArtist(albumTitle, artist);
+                if (album == null) {
+                    album = new Album();
+                    album.setTitle(albumTitle);
+                    album.SetArtist(artist);
+                    albumRepository.save(album);
+                }
 
-               Song existingSong = songRepository.findByTitleArtistAndAlbum(title, artistName, albumTitle);
-               if (existingSong != null) {
-                existingSong.incrementPlayCount();
-                songRepository.save(existingSong);
-               } else {
-                Song newSong = new Song();
-                newSong.setTitle(title);
-                newSong.setArtist(artist);
-                newSong.setAlbum(album);
-                newSong.setPlayCount(1);
-                songRepository.save(newSong);
-               }
+                Song existingSong = songRepository.findByTitleAndArtistAndAlbum(title, artist, album);
+                if (existingSong != null) {
+                    existingSong.incrementPlayCount();
+                    songRepository.save(existingSong);
+                } else {
+                    Song newSong = new Song();
+                    newSong.setTitle(title);
+                    newSong.setArtist(artist);
+                    newSong.setAlbum(album);
+                    newSong.setPlayCount(1);
+                    songRepository.save(newSong);
+                }
 
-            
             }
 
         } catch (JsonProcessingException e) {
