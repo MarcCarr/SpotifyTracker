@@ -40,15 +40,6 @@ public class SpotifyAuthController {
     private static final String AUTH_URL = "https://accounts.spotify.com/authorize";
 
     @Autowired
-    private SongRepository songRepository;
-
-    @Autowired
-    private ArtistRepository artistRepository;
-
-    @Autowired
-    private AlbumRepository albumRepository;
-
-    @Autowired
     private SpotifyAuthService spotifyAuthService;
 
     @Autowired
@@ -72,7 +63,7 @@ public class SpotifyAuthController {
 
     }
 
-    @GetMapping("/callback")
+    @GetMapping("/callback") // Spotify response page after login^. Access token + refresh token printed to console.
     public ResponseEntity<String> callback(@RequestParam("code") String code) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -97,11 +88,11 @@ public class SpotifyAuthController {
         return ResponseEntity.ok("Authorization complete. See console for token");
     }
 
-    @GetMapping("/recent")
+    @GetMapping("/recent") //Fetch recent songs /w track service
     public ResponseEntity<String> fetchRecent() {
         spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();    
 
-        return ResponseEntity.ok("Tracks fetched and stored recent tracks.");
+        return ResponseEntity.ok("Fetched and stored recent tracks.");
     }
 
 }

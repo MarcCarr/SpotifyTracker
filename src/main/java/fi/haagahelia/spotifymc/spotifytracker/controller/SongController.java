@@ -9,13 +9,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/songs")
+@RequestMapping("/songs") //Request mapping ready for additional pages for stats on tracks
 public class SongController {
 
     @Autowired
     private SongRepository songRepository;
 
-    @GetMapping("/songs")
+    @GetMapping("/songs") // Lists all songs in JSON from DB
     public ResponseEntity<List<Song>> getAllSongs() {
         return ResponseEntity.ok(songRepository.findAll());
 

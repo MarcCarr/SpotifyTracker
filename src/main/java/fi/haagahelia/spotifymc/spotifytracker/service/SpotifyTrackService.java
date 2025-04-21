@@ -5,6 +5,9 @@ import fi.haagahelia.spotifymc.spotifytracker.dto.SpotifyResponse;
 import fi.haagahelia.spotifymc.spotifytracker.dto.SpotifyItem;
 import fi.haagahelia.spotifymc.spotifytracker.domain.*;
 import fi.haagahelia.spotifymc.spotifytracker.repository.*;
+
+import java.time.Instant;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,9 @@ public class SpotifyTrackService {
 
     @Autowired
     private AlbumRepository albumRepository;
+
+    @Autowired
+    private PlayEventRepository playEventRepository;
 
     public void fetchAndStoreRecentlyPlayedTracks() {
         try {
@@ -47,7 +53,7 @@ public class SpotifyTrackService {
                 String title = item.getTrack().getName();
                 String artistName = item.getTrack().getArtists().get(0).getName();
                 String albumTitle = item.getTrack().getAlbum().getName();
-                String playedAt = item.getPlayed_at();
+                Instant playedAt = Instant.parse(item.getPlayed_at());
 
                 System.out.println(
                         "Title " + title + " - " + artistName + " | Album: " + albumTitle + " | Played at: "
@@ -68,19 +74,22 @@ public class SpotifyTrackService {
                     albumRepository.save(album);
                 }
 
+                //Check for if song is already stored and add if not
                 Song existingSong = songRepository.findByTitleAndArtistAndAlbum(title, artist, album);
-                if (existingSong != null) {
-                    existingSong.incrementPlayCount();
+                if (existingSong == null) {
+                    existingSong = new Song();
+                    existingSong.setTitle(title);
+                    existingSong.setArtist(artist);
+                    existingSong.setAlbum(album);
+                    existingSong.setPlayCount(0);
                     songRepository.save(existingSong);
-                } else {
-                    Song newSong = new Song();
-                    newSong.setTitle(title);
-                    newSong.setArtist(artist);
-                    newSong.setAlbum(album);
-                    newSong.setPlayCount(1);
-                    songRepository.save(newSong);
                 }
 
+                //play count is not inflated with every /recent fetch with play event check
+                if (!playEventRepository.existsBySongAndPlayedAt(existingSong, playedAt)) {
+                    existingSong.incrementPlayCount();
+                    songRepository.save(existingSong);
+                }
             }
 
             System.out.println("Recently played tracks fetched and stored.");

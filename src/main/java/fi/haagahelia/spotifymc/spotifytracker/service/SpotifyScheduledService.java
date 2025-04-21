@@ -10,7 +10,7 @@ public class SpotifyScheduledService {
     @Autowired
     private SpotifyTrackService spotifyTrackService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 3600000) // In milliseconds. Every hour fetched when app is running.
     public void fetchOnSchedule() {
         System.out.println("Running scheduled Spotify fetch...");
 
