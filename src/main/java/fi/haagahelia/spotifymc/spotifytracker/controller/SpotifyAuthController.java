@@ -18,6 +18,7 @@ import fi.haagahelia.spotifymc.spotifytracker.repository.AlbumRepository;
 import fi.haagahelia.spotifymc.spotifytracker.repository.ArtistRepository;
 import fi.haagahelia.spotifymc.spotifytracker.repository.SongRepository;
 import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyAuthService;
+import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyTrackService;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.*;
@@ -49,6 +50,9 @@ public class SpotifyAuthController {
 
     @Autowired
     private SpotifyAuthService spotifyAuthService;
+
+    @Autowired
+    private SpotifyTrackService spotifyTrackService;
 
     @GetMapping("/refresh-token")
     public ResponseEntity<String> refreshToken() {
@@ -94,72 +98,10 @@ public class SpotifyAuthController {
     }
 
     @GetMapping("/recent")
-    public ResponseEntity<String> getRecentlyPlayed() {
-        RestTemplate restTemplate = new RestTemplate();
+    public ResponseEntity<String> fetchRecent() {
+        spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();    
 
-        String accessToken = spotifyAuthService.getAccessToken();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-                HttpMethod.GET,
-                request,
-                String.class);
-
-        try {
-
-            ObjectMapper mapper = new ObjectMapper();
-            SpotifyResponse spotifyResponse = mapper.readValue(response.getBody(), SpotifyResponse.class);
-
-            for (SpotifyItem item : spotifyResponse.getItems()) {
-                String title = item.getTrack().getName();
-                String artistName = item.getTrack().getArtists().get(0).getName();
-                String albumTitle = item.getTrack().getAlbum().getName();
-                String playedAt = item.getPlayed_at();
-
-                System.out.println(
-                        "Title " + title + " - " + artistName + " | Album: " + albumTitle + " | Played at: "
-                                + playedAt);
-
-                Artist artist = artistRepository.findByName(artistName);
-                if (artist == null) {
-                    artist = new Artist();
-                    artist.setName(artistName);
-                    artistRepository.save(artist);
-                }
-
-                Album album = albumRepository.findByTitleAndArtist(albumTitle, artist);
-                if (album == null) {
-                    album = new Album();
-                    album.setTitle(albumTitle);
-                    album.SetArtist(artist);
-                    albumRepository.save(album);
-                }
-
-                Song existingSong = songRepository.findByTitleAndArtistAndAlbum(title, artist, album);
-                if (existingSong != null) {
-                    existingSong.incrementPlayCount();
-                    songRepository.save(existingSong);
-                } else {
-                    Song newSong = new Song();
-                    newSong.setTitle(title);
-                    newSong.setArtist(artist);
-                    newSong.setAlbum(album);
-                    newSong.setPlayCount(1);
-                    songRepository.save(newSong);
-                }
-
-            }
-
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error parsing Spotify data");
-        }
-
-        return ResponseEntity.ok("Tracks fetched and printed in console.");
+        return ResponseEntity.ok("Tracks fetched and stored recent tracks.");
     }
 
 }

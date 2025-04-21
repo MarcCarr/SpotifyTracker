@@ -20,7 +20,9 @@ public class SpotifyAuthService {
     @Value("${spotify.client-secret}")
     private String clientSecret;
 
-    private String refreshToken = "AQDCTx8Kpp2HidlDwHcNutB91TwPwhX34KM8OsAcy9tFuyWATaP3nkyazsth7bw8lx4ghxm6Kmq6EaGE5aGJTO3GWSRWBRytRE5kfNNwERtynvJAJ09kxX3H766qGkvPPpo";
+    @Value("${spotify.refresh-token}")
+    private String refreshToken;
+
     private String accessToken;
     private Instant expiresAt;
 
