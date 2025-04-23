@@ -3,20 +3,9 @@ package fi.haagahelia.spotifymc.spotifytracker.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import fi.haagahelia.spotifymc.spotifytracker.domain.Album;
-import fi.haagahelia.spotifymc.spotifytracker.domain.Artist;
-import fi.haagahelia.spotifymc.spotifytracker.domain.Song;
-import fi.haagahelia.spotifymc.spotifytracker.dto.SpotifyItem;
-import fi.haagahelia.spotifymc.spotifytracker.dto.SpotifyResponse;
-import fi.haagahelia.spotifymc.spotifytracker.repository.AlbumRepository;
-import fi.haagahelia.spotifymc.spotifytracker.repository.ArtistRepository;
-import fi.haagahelia.spotifymc.spotifytracker.repository.SongRepository;
 import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyAuthService;
 import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyTrackService;
 
@@ -26,7 +15,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@Controller
+@RestController
 public class SpotifyAuthController {
     @Value("${spotify.client-id}")
     private String clientId;
@@ -63,7 +52,8 @@ public class SpotifyAuthController {
 
     }
 
-    @GetMapping("/callback") // Spotify response page after login^. Access token + refresh token printed to console.
+    @GetMapping("/callback") // Spotify response page after login^. Access token + refresh token printed to
+                             // console.
     public ResponseEntity<String> callback(@RequestParam("code") String code) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -88,9 +78,9 @@ public class SpotifyAuthController {
         return ResponseEntity.ok("Authorization complete. See console for token");
     }
 
-    @GetMapping("/recent") //Fetch recent songs /w track service
+    @GetMapping("/recent") // Fetch recent songs /w track service
     public ResponseEntity<String> fetchRecent() {
-        spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();    
+        spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();
 
         return ResponseEntity.ok("Fetched and stored recent tracks.");
     }

@@ -74,7 +74,7 @@ public class SpotifyTrackService {
                     albumRepository.save(album);
                 }
 
-                //Check for if song is already stored and add if not
+                // Check for if song is already stored and add if not
                 Song existingSong = songRepository.findByTitleAndArtistAndAlbum(title, artist, album);
                 if (existingSong == null) {
                     existingSong = new Song();
@@ -85,10 +85,13 @@ public class SpotifyTrackService {
                     songRepository.save(existingSong);
                 }
 
-                //play count is not inflated with every /recent fetch with play event check
+                // play count is not inflated with every /recent fetch with play event check
                 if (!playEventRepository.existsBySongAndPlayedAt(existingSong, playedAt)) {
                     existingSong.incrementPlayCount();
                     songRepository.save(existingSong);
+
+                    PlayEvent event = new PlayEvent(existingSong, playedAt);
+                    playEventRepository.save(event);
                 }
             }
 
