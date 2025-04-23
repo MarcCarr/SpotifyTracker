@@ -4,6 +4,9 @@ import fi.haagahelia.spotifymc.spotifytracker.domain.PlayEvent;
 
 import java.time.Instant;
 
+/**
+ * DTO for individual playback history.
+ */
 public class PlayEventDTO {
     private String title;
     private String artist;

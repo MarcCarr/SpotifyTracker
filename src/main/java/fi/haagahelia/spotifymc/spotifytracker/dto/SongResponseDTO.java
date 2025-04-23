@@ -2,6 +2,10 @@ package fi.haagahelia.spotifymc.spotifytracker.dto;
 
 import fi.haagahelia.spotifymc.spotifytracker.domain.Song;
 
+/**
+ * DTO for exposing song data in API responses.
+ * Includes song title, artist name, album title, and play count.
+ */
 public class SongResponseDTO {
     private String title;
     private int playCount;

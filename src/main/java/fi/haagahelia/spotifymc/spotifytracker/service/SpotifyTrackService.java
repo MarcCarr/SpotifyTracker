@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+/**
+ * Service that fetches recently played tracks from Spotify API, processes them, and stores new play events to DB
+ * OAuth token usage, Track, Artist, album entity management and deduplication with PlayEvent
+ */
 @Service
 public class SpotifyTrackService {
     @Autowired
@@ -30,6 +33,10 @@ public class SpotifyTrackService {
     @Autowired
     private PlayEventRepository playEventRepository;
 
+    /**
+     * Fetches recently played tracks (max 50)
+     * Checks for unique playback events and stores them
+     */
     public void fetchAndStoreRecentlyPlayedTracks() {
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -55,10 +62,7 @@ public class SpotifyTrackService {
                 String albumTitle = item.getTrack().getAlbum().getName();
                 Instant playedAt = Instant.parse(item.getPlayed_at());
 
-                System.out.println(
-                        "Title " + title + " - " + artistName + " | Album: " + albumTitle + " | Played at: "
-                                + playedAt);
-
+                //Look for or create Artist
                 Artist artist = artistRepository.findByName(artistName);
                 if (artist == null) {
                     artist = new Artist();
@@ -66,6 +70,7 @@ public class SpotifyTrackService {
                     artistRepository.save(artist);
                 }
 
+                //Look for or create Album
                 Album album = albumRepository.findByTitleAndArtist(albumTitle, artist);
                 if (album == null) {
                     album = new Album();
@@ -74,7 +79,7 @@ public class SpotifyTrackService {
                     albumRepository.save(album);
                 }
 
-                // Check for if song is already stored and add if not
+                // Look for or create Song
                 Song existingSong = songRepository.findByTitleAndArtistAndAlbum(title, artist, album);
                 if (existingSong == null) {
                     existingSong = new Song();
@@ -85,7 +90,10 @@ public class SpotifyTrackService {
                     songRepository.save(existingSong);
                 }
 
-                // play count is not inflated with every /recent fetch with play event check
+                /**
+                 * Only store unique play events by timestamp to avoid duplicate play counts
+                 * Play count inflates with /recent fetch without this!
+                */
                 if (!playEventRepository.existsBySongAndPlayedAt(existingSong, playedAt)) {
                     existingSong.incrementPlayCount();
                     songRepository.save(existingSong);

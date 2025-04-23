@@ -12,6 +12,10 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Managing token lifecycle using refresh token.
+ * Refreshing and caching tokens until they expire
+ */
 @Service
 public class SpotifyAuthService {
     @Value("${spotify.client-id}")
@@ -26,7 +30,11 @@ public class SpotifyAuthService {
     private String accessToken;
     private Instant expiresAt;
 
-    public String refreshAcessToken() {
+    /**
+     * Uses refresh token to request a new access token From Spotify.
+     * Saves new access token and its expiration timestamp.
+     */
+    public String refreshAccessToken() {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
@@ -49,7 +57,7 @@ public class SpotifyAuthService {
             JsonNode json = mapper.readTree(response.getBody());
 
             accessToken = json.get("access_token").asText();
-            int expiresIn = json.get("expires_in").asInt(); // 3600s / 1h
+            int expiresIn = json.get("expires_in").asInt(); // 3600s = 1h
             expiresAt = Instant.now().plusSeconds(expiresIn);
 
             System.out.println("New access token: " + accessToken);
@@ -63,10 +71,11 @@ public class SpotifyAuthService {
 
     }
 
+    //Returns valid access token. Refreshes if it's expired or not yet fetched.
     public String getAccessToken() {
         if (accessToken == null || Instant.now().isAfter(expiresAt)) {
             System.out.println("Access token rexpires, refreshing...(3h time diff!)");
-            refreshAcessToken();
+            refreshAccessToken();
         }
         return accessToken;
     }

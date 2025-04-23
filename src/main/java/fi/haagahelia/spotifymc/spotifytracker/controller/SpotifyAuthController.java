@@ -15,8 +15,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * For authentication and authorization with Spotify using OAuth 2.0
+ * Login, callback handling, token refresh, and manual fetching of recent tracks
+ */
+
 @RestController
 public class SpotifyAuthController {
+
+    // Values injected from application.properties
     @Value("${spotify.client-id}")
     private String clientId;
 
@@ -34,15 +41,24 @@ public class SpotifyAuthController {
     @Autowired
     private SpotifyTrackService spotifyTrackService;
 
+    /**
+     * Refreshes access token with saved refresh token.
+     * Access to Spotify API is maintained withour re-login or hard-coding access /
+     * refresh token.
+     */
     @GetMapping("/refresh-token")
     public ResponseEntity<String> refreshToken() {
-        String response = spotifyAuthService.refreshAcessToken();
+        String response = spotifyAuthService.refreshAccessToken();
         return ResponseEntity.ok("Token refreshed. Check console for new access token.");
     }
 
+    /**
+     * Spotify login flow initiated with redirecting user to Spotify's auth page.
+     * After login, Spotify redirects to /callback with authorization code (URL).
+     */
     @GetMapping("/login")
     public RedirectView login() {
-        String scope = "user-read-recently-played"; // Get spotify code for API access and recently played songs
+        String scope = "user-read-recently-played";
         String authUrl = AUTH_URL + "?client_id=" + clientId
                 + "&response_type=code"
                 + "&redirect_uri=" + redirectUri
@@ -52,8 +68,8 @@ public class SpotifyAuthController {
 
     }
 
-    @GetMapping("/callback") // Spotify response page after login^. Access token + refresh token printed to
-                             // console.
+    // Exchanges the authorization code for access and refresh token
+    @GetMapping("/callback")
     public ResponseEntity<String> callback(@RequestParam("code") String code) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -78,6 +94,10 @@ public class SpotifyAuthController {
         return ResponseEntity.ok("Authorization complete. See console for token");
     }
 
+    /**
+     * Manually triggers fetching of recently played tracks.
+     * Saving new play events and increments play counts when appropriate.
+     */
     @GetMapping("/recent") // Fetch recent songs /w track service
     public ResponseEntity<String> fetchRecent() {
         spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();

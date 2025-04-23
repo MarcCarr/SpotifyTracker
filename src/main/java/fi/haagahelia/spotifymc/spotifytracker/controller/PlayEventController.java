@@ -13,11 +13,21 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 
+/**
+ * REST controller for listening timeline.
+ * Optional filterin by date using 'from' and 'to' query parameters.
+ */
 @RestController
 public class PlayEventController {
     @Autowired
     private PlayEventRepository playEventRepository;
 
+    /**
+     * Returns list of played tracks (most recent first)
+     * Query parameters:
+     * - from: start date in format yyyy-MM-dd
+     * -to : end sate in format yyyy-MM-dd
+     */
     @GetMapping("/timeline")
     public ResponseEntity<List<PlayEventDTO>> getTimeline(
             @RequestParam(required = false) String from,
@@ -25,11 +35,15 @@ public class PlayEventController {
         List<PlayEvent> events;
 
         if (from != null && to != null) {
-            Instant fromDate = LocalDate.parse(from).atStartOfDay(ZoneOffset.UTC).toInstant();
-            Instant toDate = LocalDate.parse(to).plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant(); //1 day added in case searching through same date.
+            Instant fromDate = LocalDate.parse(from)
+                    .atStartOfDay(ZoneOffset.UTC)
+                    .toInstant();
+            Instant toDate = LocalDate.parse(to)
+                    .plusDays(1)
+                    .atStartOfDay(ZoneOffset.UTC)
+                    .toInstant(); // 1 day added to include full 'to' day.
             events = playEventRepository.findByPlayedAtBetween(fromDate, toDate);
-            System.out.println("Filterin from " + fromDate + " to " + toDate);
-            System.out.println("Found events: " + events.size());
+
         } else {
             events = playEventRepository.findAll(Sort.by(Sort.Direction.DESC, "playedAt"));
         }
