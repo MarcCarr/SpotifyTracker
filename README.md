@@ -30,16 +30,29 @@ This is a Java Spring Boot application that connects to the Spotify API to track
 
 ## Running the Project
 1. Clone the repository
+
 2. Visit https://developer.spotify.com/documentation/web-api to create your own app (Required for API access)
-3. Add the following to 'application properties':
+   - Find client and secret ID
+   - Set a redirect URI. E.g http://127.0.0.1:8080/callback
+   - Note. localhost - URI's are no longer accepted by Spotify!
+3. Set up PostegrSQL database (Install first if needed)
+   - In terminal: CREATE DATABASE yourdatabasename;
+   - CREATE USER youruser WITH PASSWORD 'yourpassword';
+   - GRANT ALL PRIVILEGES ON DATABASE yourdatabasename TO youruser;
+4. Add the following to 'application properties':
 
 spotify.client-id=your_spotify_client_id
 spotify.client-secret=your_spotify_client_secret
-spotify.redirect-uri=http://localhost:8080/callback
-spotify.refresh-token=your_initial_refresh_token
-spring.datasource.url=jdbc:postgresql://localhost:5432/spotifytracker
+spotify.redirect-uri=http://127.0.0.1:8080/callback
+spotify.refresh-token= # Leavy empty initially! Will be auto-saved after login.
+
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/yourdatabasename
 spring.datasource.username=your_db_username
 spring.datasource.password=your_db_password
+
+
 spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 
