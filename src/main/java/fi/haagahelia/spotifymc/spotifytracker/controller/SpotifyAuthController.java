@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.view.RedirectView;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyAuthService;
 import fi.haagahelia.spotifymc.spotifytracker.service.SpotifyTrackService;
 
@@ -42,17 +45,6 @@ public class SpotifyAuthController {
     private SpotifyTrackService spotifyTrackService;
 
     /**
-     * Refreshes access token with saved refresh token.
-     * Access to Spotify API is maintained withour re-login or hard-coding access /
-     * refresh token.
-     */
-    @GetMapping("/refresh-token")
-    public ResponseEntity<String> refreshToken() {
-        String response = spotifyAuthService.refreshAccessToken();
-        return ResponseEntity.ok("Token refreshed. Check console for new access token.");
-    }
-
-    /**
      * Spotify login flow initiated with redirecting user to Spotify's auth page.
      * After login, Spotify redirects to /callback with authorization code (URL).
      */
@@ -84,21 +76,63 @@ public class SpotifyAuthController {
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                "https://accounts.spotify.com/api/token",
-                request,
-                String.class);
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    "https://accounts.spotify.com/api/token",
+                    request,
+                    String.class);
 
-        System.out.println("Spotify token:\n" + response.getBody());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode json = mapper.readTree(response.getBody());
 
-        return ResponseEntity.ok("Authorization complete. See console for token");
+            JsonNode accessTokenNode = json.get("access_token");
+            JsonNode refreshTokenNode = json.get("refresh_token");
+
+            if (accessTokenNode == null || refreshTokenNode == null) {
+                System.out.println("Missing token fields in Spotify response.");
+                System.out.println("Full spotify response: " + response.getBody());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Failed to retrive tokens from Spotify. Check client settings");
+            }
+
+            String accessToken = accessTokenNode.asText();
+            String refreshToken = refreshTokenNode.asText();
+
+            System.out.println("Access token: " + accessToken);
+            System.out.println("Refresh token: " + refreshToken);
+
+            spotifyAuthService.saveRefreshToken(refreshToken);
+
+            return ResponseEntity.ok("Authorization complete. Refresh token saved. Check console");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to process token response.");
+        }
+    }
+
+    /**
+     * Refreshes access token with saved refresh token.
+     * Access to Spotify API is maintained withour re-login or hard-coding access /
+     * refresh token.
+     */
+
+    @GetMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken() {
+        String newToken = spotifyAuthService.refreshAccessToken();
+
+        if (newToken == null) {
+            return ResponseEntity.badRequest().body("No refresh token available. Please login first.");
+        }
+
+        return ResponseEntity.ok("New access token refreshed successfully!");
     }
 
     /**
      * Manually triggers fetching of recently played tracks.
      * Saving new play events and increments play counts when appropriate.
      */
-    @GetMapping("/recent") // Fetch recent songs /w track service
+    @GetMapping("/recent")
     public ResponseEntity<String> fetchRecent() {
         spotifyTrackService.fetchAndStoreRecentlyPlayedTracks();
 
